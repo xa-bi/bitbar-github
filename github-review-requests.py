@@ -138,6 +138,6 @@ if __name__ == '__main__':
     title = '%s - %s| color=#586069 href=%s size=16' % (pr['repository'], pr['title'], pr['url'])
     subtitle = '#%s opened %s ago by @%s | color=#586069 size=12' % (pr['number'], pr['date'], pr['author'])
 
-    print(title)
-    print(subtitle)
+    print(title.encode('utf-8').strip())
+    print(subtitle.encode('utf-8').strip())
     print('---')

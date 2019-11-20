@@ -170,6 +170,6 @@ if __name__ == '__main__':
        subtitle += ":pencil: " + comments + " "
     subtitle += ' | color=#586069 size=12'
 
-    print(title)
-    print(subtitle)
+    print(title.encode('utf-8').strip())
+    print(subtitle.encode('utf-8').strip())
     print('---')
