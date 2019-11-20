@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# <bitbar.title>Github review requests</bitbar.title>
+# <bitbar.version>v1.0</bitbar.version>
+# <bitbar.author>Xabi Vázquez</bitbar.author>
+# <bitbar.author.github>xa-bi</bitbar.author.github>
+# <bitbar.desc>This plugin will show you all the PRs waiting for your review.</bitbar.desc>
+# <bitbar.image>https://github.com/xa-bi/bitbar-github/raw/master/images/sample-github-review-requests.png</bitbar.image>
+# <bitbar.dependencies>python</bitbar.dependencies>
+# <bitbar.abouturl>https://github.com/xa-bi/bitbar-github/</bitbar.abouturl>
+
 GITHUB_API = 'https://api.github.com/graphql'
 GITHUB_ACCESS_TOKEN = ''
 GITHUB_LOGIN = ''
@@ -56,7 +65,7 @@ def parse_date(text):
   hours = diff.seconds / 3600
   minutes = diff.seconds % 3600 / 60
   seconds = diff.seconds % 3600 % 60
-  
+
   res = ''
   if days > 0:
     res = '%s day%s' %(days, 's' if days > 1 else '')
@@ -66,7 +75,7 @@ def parse_date(text):
     res = '%s minute%s' %(minutes, 's' if minutes > 1 else '')
   elif seconds > 0:
     res = '%s second%s' %(seconds, 's' if seconds > 1 else '')
-  
+
   return res
 
 def get_reviews_requested(login):

@@ -12,7 +12,7 @@ This plugin will show you all your opened PRs and the state of the review. Githu
 
 ## github-review-requests.py
 
-This plugin will show you all the PRs witing for your review. Github PR page will be opened if you ckick on it.
+This plugin will show you all the PRs waiting for your review. Github PR page will be opened if you ckick on it.
 
 ![Review Requests](images/sample-github-review-requests.png)
 
