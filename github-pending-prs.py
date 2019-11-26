@@ -111,7 +111,7 @@ def get_pending_requests(login):
       pending.append(reviewer['requestedReviewer']['login'])
     for reviewer in node['reviews']['nodes']:
       login = reviewer['author']['login']
-      if (reviewer['state'] == 'APPROVED') and login not in pending:
+      if (reviewer['state'] == 'APPROVED') and login not in pending and login not in aproved:
         aproved.append(login)
       if (reviewer['state'] == 'COMMENTED') and login not in comments:
         comments.append(login)
