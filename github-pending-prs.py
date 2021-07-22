@@ -108,7 +108,8 @@ def get_pending_requests(login):
     aproved = []
     comments = []
     for reviewer in node['reviewRequests']['nodes']:
-      pending.append(reviewer['requestedReviewer']['login'])
+      if reviewer['requestedReviewer']:
+        pending.append(reviewer['requestedReviewer']['login'])
     for reviewer in node['reviews']['nodes']:
       login = reviewer['author']['login']
       if (reviewer['state'] == 'APPROVED') and login not in pending and login not in aproved:
