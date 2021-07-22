@@ -151,7 +151,20 @@ if __name__ == '__main__':
   if pending_requests is None:
     fatal_error('Unknown error. Is GITHUB_ACCESS_TOKEN valid?')
 
-  print('#%s' % len(pending_requests))
+  warn_percentage = min(len(pending_requests), 10) / 10.0
+  color = '#00a357'
+
+  if (warn_percentage > 0):
+    start_color = { 'red': 255 , 'green': 196, 'blue': 0 }
+    end_color = { 'red': 229 , 'green': 83, 'blue': 83 }
+
+    red   = start_color['red'] + warn_percentage * (end_color['red'] - start_color['red'])
+    green = start_color['green'] + warn_percentage * (end_color['green'] - start_color['green'])
+    blue  = start_color['blue'] + warn_percentage * (end_color['blue'] - start_color['blue'])
+
+    color = '#%02x%02x%02x' % (red, green, blue)
+
+  print('#%s | color=%s' % (len(pending_requests), color))
   print('---')
   if len(pending_requests) == 0:
     print('No pending PRs :tada: ')
