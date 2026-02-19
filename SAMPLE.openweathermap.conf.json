@@ -1,0 +1,7 @@
+{
+  "API_KEY": "your_openweathermap_api_key_here",
+  "LAT": 40.4168,
+  "LON": -3.7038,
+  "CITY": "Madrid,ES",
+  "LABEL": "Madrid, Spain"
+}

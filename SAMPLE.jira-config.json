@@ -1,0 +1,6 @@
+{
+  "JIRA_API_TOKEN": "ATAT....",
+  "JIRA_USER_EMAIL": "foo@bar.com",
+  "JIRA_QUEUES": [18, 20],
+  "JIRA_DOMAIN": "https://your-company-name.atlassian.net"
+}

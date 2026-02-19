@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # <bitbar.title>Github pending PRs</bitbar.title>
-# <bitbar.version>v1.1</bitbar.version>
+# <bitbar.version>v1.0</bitbar.version>
 # <bitbar.author>Xabi Vázquez</bitbar.author>
 # <bitbar.author.github>xa-bi</bitbar.author.github>
 # <bitbar.desc>This plugin will show you all your opened PRs and the state of the review.</bitbar.desc>
@@ -18,7 +18,10 @@ import datetime
 import json
 import os
 import sys
-from urllib.request import Request, urlopen
+try:
+  from urllib.request import Request, urlopen
+except ImportError:
+  from urllib2 import Request, urlopen
 
 GITHUB_QUERY = '''{
   search(query: "type:pr state:open author:%(login)s", type: ISSUE, first: 100) {
@@ -31,17 +34,6 @@ GITHUB_QUERY = '''{
           title
           url
           createdAt
-          isDraft
-          mergeStateStatus
-          commits(last: 1) {
-            nodes {
-              commit {
-                statusCheckRollup {
-                  state
-                }
-              }
-            }
-          }
           reviews(last: 10) {
             nodes {
               author {
@@ -72,15 +64,15 @@ def execute_github_query(query):
 
   try:
     response = urlopen(req)
-  except Exception:
+  except:
     return
 
   buf = response.read()
   return json.loads(buf.decode('utf-8'))
 
 def parse_date(text):
-  date_obj = datetime.datetime.strptime(text, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc)
-  diff = datetime.datetime.now(datetime.timezone.utc) - date_obj
+  date_obj = datetime.datetime.strptime(text, '%Y-%m-%dT%H:%M:%SZ')
+  diff = datetime.datetime.now() - date_obj
   days = diff.days
   hours = diff.seconds / 3600
   minutes = diff.seconds % 3600 / 60
@@ -88,13 +80,13 @@ def parse_date(text):
 
   res = ''
   if days > 0:
-    res = '%s day%s' %(days, 's' if days >= 2 else '')
+    res = '%s day%s' %(days, 's' if days > 1 else '')
   elif hours > 0:
-    res = '%d hour%s' %(hours, 's' if hours >= 2 else '')
+    res = '%s hour%s' %(hours, 's' if hours > 1 else '')
   elif minutes > 0:
-    res = '%d minute%s' %(minutes, 's' if minutes >= 2 else '')
+    res = '%s minute%s' %(minutes, 's' if minutes > 1 else '')
   elif seconds > 0:
-    res = '%s second%s' %(seconds, 's' if seconds >= 2 else '')
+    res = '%s second%s' %(seconds, 's' if seconds > 1 else '')
 
   return res
 
@@ -112,15 +104,9 @@ def get_pending_requests(login):
     url = node['url']
     date = parse_date(node['createdAt'])
     repository = node['repository']['nameWithOwner']
-    is_draft = node['isDraft']
-    is_blocked = node['mergeStateStatus'] == 'BLOCKED'
-    commit_nodes = node['commits']['nodes']
-    rollup = commit_nodes[-1]['commit']['statusCheckRollup'] if commit_nodes else None
-    ci_state = rollup['state'] if rollup else None
     pending = []
     aproved = []
     comments = []
-    changes_requested = []
     for reviewer in node['reviewRequests']['nodes']:
       if reviewer['requestedReviewer']:
         pending.append(reviewer['requestedReviewer']['login'])
@@ -130,8 +116,6 @@ def get_pending_requests(login):
         aproved.append(login)
       if (reviewer['state'] == 'COMMENTED') and login not in comments:
         comments.append(login)
-      if (reviewer['state'] == 'CHANGES_REQUESTED') and login not in changes_requested:
-        changes_requested.append(login)
     pending_requests.append({
       'title': title,
       'url': url,
@@ -139,11 +123,7 @@ def get_pending_requests(login):
       'repository': repository,
       'pending': pending,
       'aproved': aproved,
-      'comments': comments,
-      'changes_requested': changes_requested,
-      'is_draft': is_draft,
-      'is_blocked': is_blocked,
-      'ci_state': ci_state
+      'comments': comments
     })
 
   return pending_requests
@@ -160,7 +140,7 @@ if __name__ == '__main__':
       data = json.load(json_data_file)
       GITHUB_ACCESS_TOKEN = data['GITHUB_ACCESS_TOKEN']
       GITHUB_LOGIN = data['GITHUB_LOGIN']
-  except Exception:
+  except:
     fatal_error('Couldn\'t read [github-config.json] config file')
 
   if not all([GITHUB_ACCESS_TOKEN, GITHUB_LOGIN]):
@@ -184,13 +164,7 @@ if __name__ == '__main__':
 
     color = '#%02x%02x%02x' % (int(red), int(green), int(blue))
 
-  needs_attention = any(
-    pr['changes_requested'] or pr['ci_state'] == 'FAILURE'
-    for pr in pending_requests
-  )
-  warning = ' ⚠️' if needs_attention else ''
-
-  print('#%s%s | color=%s' % (len(pending_requests), warning, color))
+  print('#%s | color=%s' % (len(pending_requests), color))
   print('---')
   if len(pending_requests) == 0:
     print('No pending PRs :tada: ')
@@ -199,27 +173,17 @@ if __name__ == '__main__':
     aproved = (", ").join(pr['aproved'])
     pending = (", ").join(pr['pending'])
     comments = (", ").join(pr['comments'])
-    changes_requested = (", ").join(pr['changes_requested'])
 
-    draft_prefix = ':construction: ' if pr['is_draft'] else ''
-    blocked_suffix = ' :lock:' if pr['is_blocked'] else ''
-    ci_icons = {'SUCCESS': ':white_check_mark:', 'FAILURE': ':x:', 'PENDING': ':hourglass:'}
-    ci_icon = ci_icons.get(pr['ci_state'], '') + ' ' if pr['ci_state'] else ''
-
-    title = '%s%s%s - %s (%s ago)%s| color=#586069 href=%s size=16' % (draft_prefix, ci_icon, pr['repository'], pr['title'], pr['date'], blocked_suffix, pr['url'])
-    print(title.strip())
-
+    title = '%s - %s (%s ago)| color=#586069 href=%s size=16' % (pr['repository'], pr['title'], pr['date'], pr['url'])
     subtitle = ''
     if (aproved != ""):
        subtitle += ":white_check_mark: " + aproved + " "
-    if (changes_requested != ""):
-       subtitle += ":warning: " + changes_requested + " "
     if (pending != ""):
        subtitle += ":red_circle: " + pending + " "
     if (comments != ""):
        subtitle += ":pencil: " + comments + " "
-    if (subtitle != ""):
-      subtitle += ' | color=#586069 size=12'
-      print(subtitle.strip())
+    subtitle += ' | color=#586069 size=12'
 
+    print(title.strip())
+    print(subtitle.strip())
     print('---')
