@@ -188,9 +188,11 @@ if __name__ == '__main__':
     pr['changes_requested'] or pr['ci_state'] == 'FAILURE'
     for pr in pending_requests
   )
+  ci_running = any(pr['ci_state'] == 'PENDING' for pr in pending_requests)
   warning = ' ⚠️' if needs_attention else ''
+  hourglass = ' ⏳' if ci_running else ''
 
-  print('#%s%s | color=%s' % (len(pending_requests), warning, color))
+  print('#%s%s%s | color=%s' % (len(pending_requests), warning, hourglass, color))
   print('---')
   if len(pending_requests) == 0:
     print('No pending PRs :tada: ')
