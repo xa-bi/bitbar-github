@@ -38,6 +38,19 @@ GITHUB_QUERY = '''{
               commit {
                 statusCheckRollup {
                   state
+                  contexts(last: 20) {
+                    nodes {
+                      ... on CheckRun {
+                        conclusion
+                        status
+                        detailsUrl
+                      }
+                      ... on StatusContext {
+                        state
+                        targetUrl
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -117,6 +130,22 @@ def get_pending_requests(login):
     commit_nodes = node['commits']['nodes']
     rollup = commit_nodes[-1]['commit']['statusCheckRollup'] if commit_nodes else None
     ci_state = rollup['state'] if rollup else None
+    ci_url = None
+    if rollup:
+      contexts = rollup.get('contexts', {}).get('nodes', [])
+      state_map = {'FAILURE': ('FAILURE',), 'PENDING': ('IN_PROGRESS', 'QUEUED'), 'SUCCESS': ('SUCCESS',)}
+      priority_states = state_map.get(ci_state, ())
+      for ctx in contexts:
+        url_candidate = ctx.get('detailsUrl') or ctx.get('targetUrl')
+        ctx_state = ctx.get('conclusion') or ctx.get('status') or ctx.get('state', '')
+        if url_candidate and ctx_state in priority_states:
+          ci_url = url_candidate
+          break
+      if not ci_url:
+        for ctx in contexts:
+          ci_url = ctx.get('detailsUrl') or ctx.get('targetUrl')
+          if ci_url:
+            break
     pending = []
     aproved = []
     comments = []
@@ -143,7 +172,8 @@ def get_pending_requests(login):
       'changes_requested': changes_requested,
       'is_draft': is_draft,
       'is_blocked': is_blocked,
-      'ci_state': ci_state
+      'ci_state': ci_state,
+      'ci_url': ci_url
     })
 
   return pending_requests
@@ -223,5 +253,9 @@ if __name__ == '__main__':
     if (subtitle != ""):
       subtitle += ' | color=#586069 size=12'
       print(subtitle.strip())
+
+    if pr['ci_url'] and pr['ci_state'] != 'SUCCESS':
+      ci_label = ci_icons.get(pr['ci_state'], '') + ' CI | color=#586069 size=12 href=' + pr['ci_url']
+      print(ci_label)
 
     print('---')
